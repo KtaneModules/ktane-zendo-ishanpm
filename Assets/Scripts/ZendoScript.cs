@@ -50,6 +50,13 @@ public class ZendoScript : MonoBehaviour {
 	int challengeIndex = 0;
 	int activateRevealCounter = 0;
 
+	public readonly string TwitchHelpMessage =
+		"!{0} clear (Clear the grid) | " +
+		"!{0} [a|b|c][1|2|3] [empty|e] (Erase a single cell) | " +
+		"!{0} a1 [r|y|b][c|t|s] (Set a single cell) | " +
+		"!{0} a1 rc e yt bs (Set/erase several cells in reading order) | " +
+		"!{0} press [y|n|ready] (Press a button)";
+
     void Start() {
         Init();
 
@@ -284,10 +291,12 @@ public class ZendoScript : MonoBehaviour {
 		state = ModuleState.PASS;
 		UpdateDisplay();
 
-		yield return new WaitForSeconds(5);
+		//yield return new WaitForSeconds(5);
 
-		state = ModuleState.DONE;
-		UpdateDisplay();
+		//state = ModuleState.DONE;
+		//UpdateDisplay();
+
+		yield break;
 	}
 
 	public IEnumerator SwitchToFail() {
@@ -322,7 +331,14 @@ public class ZendoScript : MonoBehaviour {
 		if (n == 6) {
 			// Erase button
 			OnScreenPress();
-			brush.empty = true;
+
+			if (brush.empty) {
+				for (int i = 0; i < grid.Length; i++) {
+					grid[i] = ZendoSymbol.Empty;
+				}
+			} else {
+				brush.empty = true;
+			}
 		} else if (n < 3) {
 			OnButtonPress();
 			brush.shape = n;
@@ -469,14 +485,156 @@ public class ZendoScript : MonoBehaviour {
 		GetComponent<KMSelectable>().AddInteractionPunch();
 	}
 
-	public KMSelectable[] ProcessTwitchCommand(string command) {
-		//TODO
-		return new KMSelectable[] {};
+	public List<KMSelectable> ProcessTwitchCommand(string command) {
+		List<KMSelectable> buttons = new List<KMSelectable>();
+
+		string[] parts = command.ToLowerInvariant().Split(' ');
+
+		if (parts.Length < 1)
+			throw new FormatException("Specify a command");
+
+		if (parts.Length > 21)
+			throw new FormatException("Command too long");
+
+		if (parts[0] == "press") {
+			// Press a button / buttons
+
+			if (parts.Length < 2)
+				throw new FormatException("Specify a button (y|n|ready)");
+
+			for (int i = 1; i < parts.Length; i++) {
+				switch (parts[i]) {
+				case "y":
+				case "yes":
+					buttons.Add(yesButton);
+					break;
+				case "n":
+				case "no":
+					buttons.Add(noButton);
+					break;
+				case "r":
+				case "ready":
+					buttons.Add(readyButton);
+					break;
+				default:
+					throw new FormatException("Valid buttons are y, n, ready");
+				}
+			}
+		} else if (parts[0] == "clear") {
+			// Clear the grid
+			buttons.Add(paletteButtons[6]);
+			buttons.Add(paletteButtons[6]);
+		} else if (parts[0].Length == 2) {
+			// Set grid cells
+
+			if (state != ModuleState.EDIT)
+				throw new FormatException("Can't edit the grid right now");
+
+			int currentCell;
+
+			switch (parts[0][0]) {
+			case 'a':
+				currentCell = 0;
+				break;
+			case 'b':
+				currentCell = 1;
+				break;
+			case 'c':
+				currentCell = 2;
+				break;
+			default:
+				throw new FormatException("Invalid starting coordinate");
+			}
+
+			switch (parts[0][1]) {
+			case '1':
+				break;
+			case '2':
+				currentCell += 3;
+				break;
+			case '3':
+				currentCell += 6;
+				break;
+			default:
+				throw new FormatException("Invalid starting coordinate");
+			}
+
+			if (parts.Length < 2)
+				throw new FormatException("Specify symbols ([r|y|b][c|s|t] | e)");
+
+			int index = 1;
+
+			ZendoSymbol simulationBrush = brush;
+
+			while (currentCell < 9 && index < parts.Length) {
+				string part = parts[index];
+
+				if (part == "empty" || part == "e") {
+					if (!simulationBrush.empty) {
+						buttons.Add(paletteButtons[6]);
+						simulationBrush = ZendoSymbol.Empty;
+					}
+				} else {
+					if (part.Length != 2)
+						throw new FormatException("Please specify symbols as [color][shape], \"e\", or \"empty\", separated by spaces");
+
+					int targetColor;
+					int targetShape;
+
+					switch (part[0]) {
+					case 'r':
+						targetColor = 0;
+						break;
+					case 'y':
+						targetColor = 1;
+						break;
+					case 'b':
+						targetColor = 2;
+						break;
+					default:
+						throw new FormatException("Valid colors are r, y, b");
+					}
+
+					switch (part[1]) {
+					case 'c':
+						targetShape = 0;
+						break;
+					case 't':
+						targetShape = 1;
+						break;
+					case 's':
+						targetShape = 2;
+						break;
+					default:
+						throw new FormatException("Valid shapes are c, t, s");
+					}
+
+					if (simulationBrush.empty || simulationBrush.shape != targetShape) {
+						buttons.Add(paletteButtons[targetShape]);
+						simulationBrush.shape = targetShape;
+					}
+
+					if (simulationBrush.empty || simulationBrush.color != targetColor) {
+						buttons.Add(paletteButtons[targetColor + 3]);
+						simulationBrush.color = targetColor;
+					}
+				}
+
+				buttons.Add(gridButtons[currentCell]);
+
+				index++;
+				currentCell++;
+			}
+		} else {
+			throw new FormatException("Specify a coordinate followed by symbols, \"clear\", or \"press\" followed by a button");
+		}
+
+		return buttons;
 
 	}
 
 	public void TwitchHandleForcedSolve() {
-		//TODO
+		StartCoroutine(SwitchToPass());
 	}
 
 	void Log(string s) {
