@@ -11,6 +11,7 @@ using Random = UnityEngine.Random;
  * - Check to see how other modules with a palette behave re. interaction punch
  * - Find a better touchscreen-press sound
  * - Make screen objects 2D
+ * - Add colorblind support?
  */
 
 public class ZendoScript : MonoBehaviour {
@@ -291,10 +292,10 @@ public class ZendoScript : MonoBehaviour {
 		state = ModuleState.PASS;
 		UpdateDisplay();
 
-		//yield return new WaitForSeconds(5);
+		yield return new WaitForSeconds(5);
 
-		//state = ModuleState.DONE;
-		//UpdateDisplay();
+		state = ModuleState.DONE;
+		UpdateDisplay();
 
 		yield break;
 	}
@@ -358,8 +359,6 @@ public class ZendoScript : MonoBehaviour {
 			DisplayExample(yes);
 			break;
 		case ModuleState.CHALLENGE:
-			// submit answer
-			// TODO
 			bool actual = EvaluateRule();
 			if (yes == actual) {
 				challengeIndex++;
@@ -394,6 +393,7 @@ public class ZendoScript : MonoBehaviour {
 		case ModuleState.EDIT:
 			state = ModuleState.CHALLENGE;
 			InitChallenge();
+			//NewRule();
 			break;
 		case ModuleState.CHALLENGE:
 			state = ModuleState.EDIT;
