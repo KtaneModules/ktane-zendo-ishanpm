@@ -477,7 +477,9 @@ public class ZendoScript : MonoBehaviour {
 	}
 
 	void OnScreenPress() {
-		GetComponent<KMAudio>().PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.FastestTimerBeep, transform);
+		//TODO find better sfx	
+		//GetComponent<KMAudio>().PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.FastestTimerBeep, transform);
+		GetComponent<KMAudio>().PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, transform);
 	}
 
 	void OnButtonPress() {
