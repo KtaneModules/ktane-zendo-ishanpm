@@ -143,9 +143,6 @@ public class ZendoScript : MonoBehaviour {
 
 		// lights
 		switch (state) {
-		case ModuleState.INACTIVE:
-			SetButtonLights(0);
-			break;
 		case ModuleState.EDIT:
 			if (valid) {
 				SetButtonLights(0);
@@ -162,7 +159,6 @@ public class ZendoScript : MonoBehaviour {
 		}
 
 		// brush
-		// TODO challenge counter
 		switch (state) {
 		case ModuleState.EDIT:
 			paletteButtons[6].gameObject.SetActive(true);
@@ -287,7 +283,8 @@ public class ZendoScript : MonoBehaviour {
 		Log("Solved!");
 
 		GetComponent<KMBombModule>().HandlePass();
-		GetComponent<KMAudio>().PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.CorrectChime, transform);
+		//GetComponent<KMAudio>().PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.CorrectChime, transform);
+		GetComponent<KMAudio>().PlaySoundAtTransform("Solve", transform);
 
 		state = ModuleState.PASS;
 		UpdateDisplay();
@@ -319,26 +316,34 @@ public class ZendoScript : MonoBehaviour {
 	}
 
 	void OnGridPress(int n) {
-		OnScreenPress();
-
 		if (state == ModuleState.EDIT) {
 			grid[n] = brush;
+
+			if (grid[n].empty) {
+				GetComponent<KMAudio>().PlaySoundAtTransform("BeepOff", transform);
+			} else {
+				GetComponent<KMAudio>().PlaySoundAtTransform("BeepOn", transform);
+			}
 		}
 
 		UpdateDisplay();
 	}
 
 	void OnPalettePress(int n) {
+		if (state != ModuleState.EDIT)
+			return;
+
 		if (n == 6) {
 			// Erase button
-			OnScreenPress();
 
 			if (brush.empty) {
 				for (int i = 0; i < grid.Length; i++) {
 					grid[i] = ZendoSymbol.Empty;
 				}
+				GetComponent<KMAudio>().PlaySoundAtTransform("Erase", transform);
 			} else {
 				brush.empty = true;
+				GetComponent<KMAudio>().PlaySoundAtTransform("BeepOff", transform);
 			}
 		} else if (n < 3) {
 			OnButtonPress();
@@ -476,15 +481,9 @@ public class ZendoScript : MonoBehaviour {
 		gridText.text = sb.ToString();
 	}
 
-	void OnScreenPress() {
-		//TODO find better sfx	
-		//GetComponent<KMAudio>().PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.FastestTimerBeep, transform);
-		GetComponent<KMAudio>().PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, transform);
-	}
-
 	void OnButtonPress() {
 		GetComponent<KMAudio>().PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, transform);
-		GetComponent<KMSelectable>().AddInteractionPunch();
+		GetComponent<KMSelectable>().AddInteractionPunch(0.5f);
 	}
 
 	public List<KMSelectable> ProcessTwitchCommand(string command) {

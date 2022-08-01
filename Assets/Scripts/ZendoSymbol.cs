@@ -35,7 +35,7 @@ public struct ZendoSymbol {
 		if (grid.Length == 9) {
 			for (int i = 0; i < grid.Length; i++) {
 				if (grid[i].empty) {
-					sb.Append("  ");
+					sb.Append("~~");
 				} else {
 					switch (grid[i].color) {
 					case 0: sb.Append("r"); break;
@@ -55,7 +55,7 @@ public struct ZendoSymbol {
 				if (i%3 == 2) {
 					if (i != 8) {
 						// new row
-						sb.Append("\n--+--+--\n");
+						sb.Append("\n");
 					}
 				} else {
 					// new cell
