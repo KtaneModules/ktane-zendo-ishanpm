@@ -14,7 +14,10 @@ MonoBehaviour:
   id: zendo
   title: Zendo
   author: woofmao
-  description: Experiment to find the rule applied to a grid of shapes.
-  version: 0.1
+  description: 'Experiment to find the rule applied to a grid of shapes.
+
+
+    Module ID: zendo'
+  version: 1.0
   outputFolder: build
-  previewImage: {fileID: 0}
+  previewImage: {fileID: 2800000, guid: 342543f1e55940c40abd7cdcf9672a93, type: 3}
