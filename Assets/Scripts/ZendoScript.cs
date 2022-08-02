@@ -6,20 +6,13 @@ using System.Text;
 
 using Random = UnityEngine.Random;
 
-/*
- * Notes:
- * - Check to see how other modules with a palette behave re. interaction punch
- * - Find a better touchscreen-press sound
- * - Make screen objects 2D
- * - Add colorblind support?
- */
-
 public class ZendoScript : MonoBehaviour {
 	enum ModuleState {
 		INACTIVE, EDIT, CHALLENGE, PASS, FAIL, DONE, ERROR
 	}
 
 	private readonly string[] SHAPE_KEYS = { "Circle", "Triangle", "Square" };
+	private readonly string[] COLOR_LABELS = { "R", "Y", "B" };
 
 	public Light[] lights;
 
@@ -36,6 +29,8 @@ public class ZendoScript : MonoBehaviour {
 	public TextMesh brushText;
 
 	public Material[] shapeMaterials;
+
+	public GameObject[] colorblindIndicators;
 
 	public int maxChallenges = 5;
 
@@ -66,6 +61,14 @@ public class ZendoScript : MonoBehaviour {
 
 	void Init() {
 		moduleId = ++totalModules;
+
+		// show/hide colorblind indicators
+
+		bool enableColorBlind = GetComponent<KMColorblindMode>().ColorblindModeActive;
+
+		foreach (GameObject e in colorblindIndicators) {
+			e.SetActive(enableColorBlind);
+		}
 
 		// fix light range
 		float scalar = transform.lossyScale.x;
@@ -436,6 +439,8 @@ public class ZendoScript : MonoBehaviour {
 
 		obj.SetActive(true);
 
+		obj.transform.Find("ColorText").GetComponent<TextMesh>().text = COLOR_LABELS[symbol.color];
+
 		int shape = symbol.shape;
 		int color = symbol.color;
 
@@ -646,6 +651,4 @@ public class ZendoScript : MonoBehaviour {
 		string s = string.Format(format, args: args);
 		Debug.LogFormat("[Zendo #{0}] {1}", moduleId, s);
 	}
-
-	//TODO LogWarning and LogError
 }
