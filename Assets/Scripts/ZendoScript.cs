@@ -528,7 +528,8 @@ public class ZendoScript : MonoBehaviour {
 			}
 		} else if (parts[0] == "clear") {
 			// Clear the grid
-			buttons.Add(paletteButtons[6]);
+			if (!brush.empty)
+				buttons.Add(paletteButtons[6]);
 			buttons.Add(paletteButtons[6]);
 		} else if (parts[0].Length == 2) {
 			// Set grid cells
