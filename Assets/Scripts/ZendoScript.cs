@@ -51,7 +51,8 @@ public class ZendoScript : MonoBehaviour {
 		"!{0} [a|b|c][1|2|3] [empty|e] (Erase a single cell) | " +
 		"!{0} a1 [r|y|b][c|t|s] (Set a single cell) | " +
 		"!{0} a1 rc e yt bs (Set/erase several cells in reading order) | " +
-		"!{0} press [y|n|ready] (Press a button)";
+		"!{0} press [y|n|ready] (Press a button or several buttons) | " +
+		"!{0} slowpress y y n n (Press buttons slowly)" ;
 
     void Start() {
         Init();
@@ -491,22 +492,38 @@ public class ZendoScript : MonoBehaviour {
 		GetComponent<KMSelectable>().AddInteractionPunch(0.5f);
 	}
 
-	public List<KMSelectable> ProcessTwitchCommand(string command) {
+	public IEnumerator ProcessTwitchCommand(string command) {
 		List<KMSelectable> buttons = new List<KMSelectable>();
+		bool slowPress = false;
 
 		string[] parts = command.ToLowerInvariant().Split(' ');
 
-		if (parts.Length < 1)
-			throw new FormatException("Specify a command");
+		if (parts.Length < 1) {
+			yield return "sendtochaterror Specify a command";
+			yield break;
+		}
 
-		if (parts.Length > 21)
-			throw new FormatException("Command too long");
+		if (parts.Length > 21) {
+			yield return "sendtochaterror Command too long";
+			yield break;
+		}
 
-		if (parts[0] == "press") {
+		if (parts[0] == "press" || parts[0] == "slowpress") {
 			// Press a button / buttons
 
-			if (parts.Length < 2)
-				throw new FormatException("Specify a button (y|n|ready)");
+			if (parts[0] == "slowpress") {
+				slowPress = true;
+
+				if (parts.Length > 11) {
+					yield return "sendtochaterror Maximum 10 commands for slowpress, sorry";
+					yield break;
+				}
+			}
+
+			if (parts.Length < 2) {
+				yield return "sendtochaterror Specify a button (y|n|ready)";
+				yield break;
+			}
 
 			for (int i = 1; i < parts.Length; i++) {
 				switch (parts[i]) {
@@ -523,7 +540,8 @@ public class ZendoScript : MonoBehaviour {
 					buttons.Add(readyButton);
 					break;
 				default:
-					throw new FormatException("Valid buttons are y, n, ready");
+					yield return "sendtochaterror Valid buttons are y, n, ready";
+					yield break;
 				}
 			}
 		} else if (parts[0] == "clear") {
@@ -534,8 +552,10 @@ public class ZendoScript : MonoBehaviour {
 		} else if (parts[0].Length == 2) {
 			// Set grid cells
 
-			if (state != ModuleState.EDIT)
-				throw new FormatException("Can't edit the grid right now");
+			if (state != ModuleState.EDIT) {
+				yield return "sendtochaterror Can't edit the grid right now";
+				yield break;
+			}
 
 			int currentCell;
 
@@ -550,7 +570,8 @@ public class ZendoScript : MonoBehaviour {
 				currentCell = 2;
 				break;
 			default:
-				throw new FormatException("Invalid starting coordinate");
+				yield return "sendtochaterror Invalid starting coordinate";
+				yield break;
 			}
 
 			switch (parts[0][1]) {
@@ -563,11 +584,14 @@ public class ZendoScript : MonoBehaviour {
 				currentCell += 6;
 				break;
 			default:
-				throw new FormatException("Invalid starting coordinate");
+				yield return "sendtochaterror Invalid starting coordinate";
+				yield break;
 			}
 
-			if (parts.Length < 2)
-				throw new FormatException("Specify symbols ([r|y|b][c|s|t] | e)");
+			if (parts.Length < 2) {
+				yield return "sendtochaterror Specify symbols ([r|y|b][c|s|t] | e)";
+				yield break;
+			}
 
 			int index = 1;
 
@@ -581,10 +605,7 @@ public class ZendoScript : MonoBehaviour {
 						buttons.Add(paletteButtons[6]);
 						simulationBrush = ZendoSymbol.Empty;
 					}
-				} else {
-					if (part.Length != 2)
-						throw new FormatException("Please specify symbols as [color][shape], \"e\", or \"empty\", separated by spaces");
-
+				} else if (part.Length == 2) {
 					int targetColor;
 					int targetShape;
 
@@ -599,7 +620,8 @@ public class ZendoScript : MonoBehaviour {
 						targetColor = 2;
 						break;
 					default:
-						throw new FormatException("Valid colors are r, y, b");
+						yield return "sendtochaterror Valid colors are r, y, b";
+						yield break;
 					}
 
 					switch (part[1]) {
@@ -613,7 +635,8 @@ public class ZendoScript : MonoBehaviour {
 						targetShape = 2;
 						break;
 					default:
-						throw new FormatException("Valid shapes are c, t, s");
+						yield return "sendtochaterror Valid shapes are c, t, s";
+						yield break;
 					}
 
 					if (simulationBrush.empty || simulationBrush.shape != targetShape) {
@@ -625,6 +648,9 @@ public class ZendoScript : MonoBehaviour {
 						buttons.Add(paletteButtons[targetColor + 3]);
 						simulationBrush.color = targetColor;
 					}
+				} else {
+					yield return "sendtochaterror Please specify symbols as [color][shape], \"e\", or \"empty\", separated by spaces";
+					yield break;
 				}
 
 				buttons.Add(gridButtons[currentCell]);
@@ -633,11 +659,21 @@ public class ZendoScript : MonoBehaviour {
 				currentCell++;
 			}
 		} else {
-			throw new FormatException("Specify a coordinate followed by symbols, \"clear\", or \"press\" followed by a button");
+			yield return "sendtochaterror Specify a coordinate followed by symbols, \"clear\", or \"press\" followed by a button";
+			yield break;
 		}
 
-		return buttons;
-
+		if (slowPress) {
+			foreach (KMSelectable button in buttons) {
+				yield return "trycancelsequence";
+				yield return new KMSelectable[] {button};
+				yield return "trywaitcancel 2";
+			}
+		} else {
+			yield return "trycancelsequence";
+			yield return buttons;
+		}
+		yield break;
 	}
 
 	public void TwitchHandleForcedSolve() {
