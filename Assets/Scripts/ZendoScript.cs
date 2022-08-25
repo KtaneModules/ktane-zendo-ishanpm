@@ -16,11 +16,11 @@ public class ZendoScript : MonoBehaviour {
 
 	public Light[] lights;
 
-    public KMSelectable[] gridButtons;
-    public KMSelectable[] paletteButtons;
-    public KMSelectable yesButton;
-    public KMSelectable noButton;
-    public KMSelectable readyButton;
+	public KMSelectable[] gridButtons;
+	public KMSelectable[] paletteButtons;
+	public KMSelectable yesButton;
+	public KMSelectable noButton;
+	public KMSelectable readyButton;
 
 	public GameObject gridDisplay;
 
