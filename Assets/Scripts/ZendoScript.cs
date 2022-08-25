@@ -54,11 +54,11 @@ public class ZendoScript : MonoBehaviour {
 		"!{0} press [y|n|ready] (Press a button or several buttons) | " +
 		"!{0} slowpress y y n n (Press buttons slowly)" ;
 
-    void Start() {
-        Init();
+	void Start() {
+		Init();
 
-        GetComponent<KMBombModule>().OnActivate += ActivateModule;
-    }
+		GetComponent<KMBombModule>().OnActivate += ActivateModule;
+	}
 
 	void Init() {
 		moduleId = ++totalModules;
@@ -98,15 +98,15 @@ public class ZendoScript : MonoBehaviour {
 
 		NewRule();
 		UpdateDisplay();
-    }
+	}
 
-    void ActivateModule() {
+	void ActivateModule() {
 		state = ModuleState.EDIT;
 
 		UpdateDisplay();
 
 		StartCoroutine(ActivateReveal());
-    }
+	}
 
 	void UpdateDisplay() {
 		bool valid = false;
